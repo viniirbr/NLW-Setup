@@ -13,7 +13,11 @@ export function SummaryTable() {
                     </div>)}
             </div>
             <div className="grid grid-rows-7 grid-flow-col gap-3">
-                {getDatesSinceYearBeginning().map(date => <HabitDay key={date.toString()}/>)}
+                {getDatesSinceYearBeginning().map(date => <HabitDay
+                    key={date.toString()}
+                    amount={10}
+                    completed={Math.round(Math.random()*5)}
+                />)}
             </div>
 
 
