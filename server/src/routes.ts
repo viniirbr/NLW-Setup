@@ -1,6 +1,6 @@
 import { FastifyInstance } from "fastify";
 import { prisma } from "./lib/prisma";
-import { z } from 'zod'
+import { string, z } from 'zod'
 
 export async function appRoutes(fastify: FastifyInstance) {
 
@@ -57,5 +57,63 @@ export async function appRoutes(fastify: FastifyInstance) {
 
         return { possibleHabits, completedHabits }
 
+    })
+
+    fastify.patch('/:habitId/toggle', async (request) => {
+        const toggleHabitParam = z.object({
+            habitId: string().uuid()
+        })
+
+        const { habitId } = toggleHabitParam.parse(request.params)
+
+        const today = new Date()
+        today.setHours(0, 0, 0, 0)
+
+        let day = await prisma.day.findUnique({
+            where: {
+                date: today
+            }
+        })
+
+        if (!day) {
+            day = await prisma.day.create({
+                data: {
+                    date: today
+                }
+            })
+        }
+
+        const dayHabit = await prisma.dayHabit.findUnique({
+            where: {
+                day_id_habit_id: {
+                    day_id: day.id,
+                    habit_id: habitId
+                }
+            }
+        })
+
+        if (dayHabit) {
+            const deletedHabit = await prisma.dayHabit.delete({
+                where: {
+                    day_id_habit_id: {
+                        day_id: dayHabit.day_id,
+                        habit_id: dayHabit.habit_id
+                    }
+                }
+            })
+            return {
+                deletedHabit: deletedHabit
+            }
+        } else {
+            const completedHabit = await prisma.dayHabit.create({
+                data: {
+                    day_id: day.id,
+                    habit_id: habitId
+                }
+            })
+            return {
+                completedHabit: completedHabit
+            }
+        }
     })
 }
